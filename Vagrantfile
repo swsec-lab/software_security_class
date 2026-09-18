@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder ".", "/vagrant/labs"
 
   config.vm.provider "virtualbox" do |vb|
-    vb.name = "security-lab1"
+    vb.name = "security-labs"
     vb.memory = 4096
     vb.cpus = 2
   end
