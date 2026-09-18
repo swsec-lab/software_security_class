@@ -1,8 +1,13 @@
 # Emerging Topics in Information Security
 
 **Software Security — Fall 2026 (2026, 2nd semester)**
-**Credits / hours:** 3 credits (3-3-0) · Course code 2313-5023-00
+
+**Instructor — Hyungseok Kim**
+
+**Credits / hours:** 3 credits (3-3-0) 
+
 **Class time:** Wed 19:00–22:00, Room 5607
+
 **Language:** English (lectures, materials, assignments, exams, and presentations)
 
 This repository holds the hands-on lab materials for the course. Each `example`
@@ -44,6 +49,9 @@ hands-on assignments and research-paper reading.
 | — Laboratory assignments | 10% |
 | — Team project | 10% |
 | Class participation | 10% |
+
+**Materials:** lecture slides and research papers are distributed through the
+course LMS. Please download all lecture materials from the LMS system.
 
 ## Weekly schedule
 
