@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Problem 0 -- pwntools warm-up.  START HERE before Problem 1.
+"""Problem 0 -- pwntools warm-up.  START HERE, before Part A (Problems 1-4).
 
 A runnable tour of the pwntools API the lecture introduces (slides 33-38),
 before you use it to exploit anything. Each section prints what it does and
@@ -100,7 +100,7 @@ def part5_shellcode():
     sc = asm(shellcraft.sh())               # execve("/bin/sh", 0, 0)
     show("len(asm(shellcraft.sh()))", len(sc))
     show("asm(shellcraft.sh()) [hex]", enhex(sc))
-    print("  Problem 5 asks you to hand-write this instead (solution3/shellcode.s).")
+    print("  Problem 4 asks you to hand-write this instead (solution3/shellcode.s).")
 
 
 def part6_tubes():
@@ -110,7 +110,7 @@ def part6_tubes():
         return
     print("  One interface for a local binary or a remote service. Here we just")
     print("  talk to vuln1 politely (no overflow): read the prompt, send a short")
-    print("  line, and read the rest. Problem 1 sends an OVERFLOWING line instead.")
+    print("  line, and read the rest. The exploit problems send an OVERFLOWING line instead.")
     io = process(VULN1)
     prompt = io.recvuntil(b"overflow me:\n")
     show("io.recvuntil(b'overflow me:\n')", prompt)
@@ -129,7 +129,7 @@ def main():
     part4_elf()
     part5_shellcode()
     part6_tubes()
-    print("\nDone. You now have every pwntools piece the exploits use. Next: Problem 1.")
+    print("\nDone. You now have every pwntools piece the exploits use. Next: Part A, Problem 1.")
 
 
 if __name__ == "__main__":

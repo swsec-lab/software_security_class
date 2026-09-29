@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Solution for Problem 5: inject a HAND-WRITTEN /bin/sh shellcode.
+"""Solution for Problem 4: inject a HAND-WRITTEN /bin/sh shellcode.
 
 Same target as vuln2 (return-to-stack), but the shellcode is not
 shellcraft.sh() -- it is assembled from solution3/shellcode.s, which you wrote
