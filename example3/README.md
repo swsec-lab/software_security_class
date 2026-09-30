@@ -131,9 +131,11 @@ Steps:
 
 1. Parse the leaked `buf is at 0x...` line with `recvline`.
 2. Build `execve("/bin/sh")` shellcode with `asm(shellcraft.sh())`.
-3. Fill the buffer with `[NOP sled][shellcode]` and overwrite the return
-   address with `buf`. Returning lands in the NOP sled and slides down into
-   the shellcode (lecture "NOP Sled").
+3. Put the shellcode at the **start** of buf, pad after it, and overwrite the
+   return address with `buf`. Return straight into the shellcode. (Shellcode
+   goes at the low end of buf on purpose: when the function returns, ESP sits
+   just above buf and its pushes grow down, so shellcode at the top would
+   clobber its own tail before it runs.)
 
 ```sh
 python3 solution3/solve_vuln2.py
@@ -158,12 +160,13 @@ equally-unsafe `gets()` so the historic code stays intact.
 
 The solution finds the address without a leak:
 
-1. With a **fixed (empty) environment**, crash with a cyclic pattern so the
-   stack layout is deterministic.
+1. Crash with a cyclic pattern. ASLR is off and both runs inherit the same
+   environment, so the stack layout is deterministic.
 2. Recover the offset with `cyclic_find(core.eip)`.
-3. Locate buf by searching the core dump for the pattern
-   (`next(core.search(...))`).
-4. Exploit a fresh run (same environment) with a NOP sled + shellcode.
+3. Locate buf by finding the pattern **inside the core's stack mapping**
+   (`core.stack`); searching all of memory could match a stray copy at a low,
+   non-stack address.
+4. Exploit a fresh run with the shellcode at the start of buf.
 
 ```sh
 python3 solution3/solve_morris.py
@@ -214,7 +217,7 @@ Do it in the two steps the lecture shows:
    ```
 
 2. **Inject your real shellcode.** Write `execve("/bin/sh", NULL, NULL)` by
-   hand, then reuse the Problem 1 layout (`[NOP sled][shellcode][ret = buf]`).
+   hand, then reuse the Problem 1 layout (`[shellcode][pad][ret = buf]`).
 
    ```sh
    python3 solution3/solve_vuln4.py              # drops a shell
@@ -330,8 +333,8 @@ Because the stack is still executable, once you defeat the canary you can
    read buf's address out of the **core dump** it drops (the Morris trick from
    Problem 2). ASLR is off, so every child shares that address.
 
-Then inject: fill buf with `[NOP sled][shellcode]`, keep the real canary, and
-set the return address to buf.
+Then inject: put the shellcode at the start of buf (padded after), keep the
+real canary, and set the return address to buf.
 
 ```sh
 ./canary_server_x &                               # 127.0.0.1:4004

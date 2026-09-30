@@ -61,6 +61,9 @@ int main(void)
             dup2(c, 0); dup2(c, 1); dup2(c, 2);
             handle();
             puts("OK");                  /* reached only if the canary survived */
+            fflush(stdout);              /* socket stdout is fully buffered; _exit
+                                            would not flush it, so the oracle would
+                                            never see "OK" */
             _exit(0);
         }
         close(c);

